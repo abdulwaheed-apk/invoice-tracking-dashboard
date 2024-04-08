@@ -136,3 +136,38 @@ export async function authenticate(
     throw error;
   }
 }
+
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string().trim(),
+  email: z.string().email({ message: 'Invalid email address' }).toLowerCase(),
+  password: z
+    .string({
+      invalid_type_error: 'Please create password of at least 6 characters',
+    })
+    .min(6, { message: 'Must be 5 or more characters long' }),
+});
+
+const CreateUser = UserSchema.omit({ id: true });
+
+export async function createUser(
+  prevStata: string | undefined,
+  formData: FormData,
+) {
+  // Validate form using Zod
+  const validatedFields = CreateUser.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+    password: formData.get('password'),
+  });
+
+  console.log('validatedFields', validatedFields);
+
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Account.',
+    };
+  }
+}
