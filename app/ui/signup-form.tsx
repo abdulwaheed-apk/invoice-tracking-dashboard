@@ -10,11 +10,13 @@ import {
 import { ArrowRightIcon } from '@heroicons/react/20/solid';
 import { Button } from './button';
 import { useFormState, useFormStatus } from 'react-dom';
-import { authenticate } from '@/app/lib/actions';
+import { createUser } from '@/app/lib/actions';
 import Link from 'next/link';
 
 export default function SignupForm() {
-  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
+  const initialState = { message: null, errors: {} };
+  const [state, dispatch] = useFormState(createUser, initialState);
+
   return (
     <form action={dispatch} className="space-y-3">
       <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
@@ -22,6 +24,7 @@ export default function SignupForm() {
           Please create a new account.
         </h1>
         <div className="w-full">
+          {/* User Name */}
           <div>
             <label
               className="mb-3 mt-5 block text-xs font-medium text-gray-900"
@@ -37,11 +40,21 @@ export default function SignupForm() {
                 name="name"
                 placeholder="Enter your full name"
                 required
+                aria-describedby="name-error"
               />
 
               <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
+            <div id="name-error" aria-live="polite" aria-atomic="true">
+              {state.errors?.name &&
+                state.errors.name.map((error: string) => (
+                  <p className="mt-2 text-sm text-red-500" key={error}>
+                    {error}
+                  </p>
+                ))}
+            </div>
           </div>
+          {/* Email */}
           <div>
             <label
               className="mb-3 mt-5 block text-xs font-medium text-gray-900"
@@ -57,10 +70,20 @@ export default function SignupForm() {
                 name="email"
                 placeholder="Enter your email address"
                 required
+                aria-describedby="email-error"
               />
               <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
+            <div id="email-error" aria-live="polite" aria-atomic="true">
+              {state.errors?.email &&
+                state.errors.email.map((error: string) => (
+                  <p className="mt-2 text-sm text-red-500" key={error}>
+                    {error}
+                  </p>
+                ))}
+            </div>
           </div>
+          {/* Password */}
           <div className="mt-4">
             <label
               className="mb-3 mt-5 block text-xs font-medium text-gray-900"
@@ -77,24 +100,33 @@ export default function SignupForm() {
                 placeholder="Create password"
                 required
                 minLength={6}
+                aria-describedby="password-error"
               />
               <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+            </div>
+            <div id="password-error" aria-live="polite" aria-atomic="true">
+              {state.errors?.password &&
+                state.errors.password.map((error: string) => (
+                  <p className="mt-2 text-sm text-red-500" key={error}>
+                    {error}
+                  </p>
+                ))}
             </div>
           </div>
         </div>
         <SignupButton />
         <div
-          className="flex h-8 items-end space-x-1"
+          className="my-2 flex h-8 items-center space-x-1"
           aria-live="polite"
           aria-atomic="true"
         >
           {/* Add form errors here */}
-          {errorMessage && (
+          {state.message ? (
             <>
               <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
-              <p className="text-sm text-red-500">{errorMessage}</p>
+              <p className="text-sm text-red-500">{state.message}</p>
             </>
-          )}
+          ) : null}
         </div>
         <div
           className={`${lusitana.className} flex items-center justify-center gap-x-1 text-lg font-normal`}

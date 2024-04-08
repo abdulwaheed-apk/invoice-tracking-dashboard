@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import bcrypt from 'bcrypt';
 
 const FormSchema = z.object({
   id: z.string(),
@@ -148,12 +149,19 @@ const UserSchema = z.object({
     .min(6, { message: 'Must be 5 or more characters long' }),
 });
 
+export type UserState = {
+  errors?: {
+    name?: string[];
+    email?: string[];
+    password?: string[];
+  };
+  message?: string | null;
+};
+
 const CreateUser = UserSchema.omit({ id: true });
 
-export async function createUser(
-  prevStata: string | undefined,
-  formData: FormData,
-) {
+export async function createUser(prevState: UserState, formData: FormData) {
+  console.log('Hhhh');
   // Validate form using Zod
   const validatedFields = CreateUser.safeParse({
     name: formData.get('name'),
@@ -170,4 +178,35 @@ export async function createUser(
       message: 'Missing Fields. Failed to Create Account.',
     };
   }
+
+  // Prepare data for insertion into the database
+  const { name, email, password } = validatedFields.data;
+
+  // const emailExist = await sql`
+  // SELECT * FROM users
+  // WHERE email = ${email}
+  // `;
+  // console.log('emailExist', emailExist);
+  // if (emailExist) {
+  //   return {
+  //     message: 'Email already exists, login to proceed.',
+  //   };
+  // }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  // Insert data into the database
+  try {
+    await sql`
+      INSERT INTO users (name, email, password)
+      VALUES (${name}, ${email}, ${hashedPassword})
+    `;
+  } catch (error) {
+    // If a database error occurs, return a more specific error.
+    return {
+      message: 'Database Error: Failed to create your account.',
+    };
+  }
+
+  // Revalidate the cache for the invoices page and redirect the user.
+  // revalidatePath('/dashboard/invoices');
+  redirect('/login');
 }
